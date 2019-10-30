@@ -75,12 +75,12 @@ class ResourceActivityFilter {
             return;
           }
 
-          log.debug("Received deletion acknowledgment from " + source + " for " + file);
+          log.fatal("Received deletion acknowledgment from " + source + " for " + file);
 
           remainingUsers.remove(source);
 
           if (remainingUsers.isEmpty()) {
-            log.debug(
+            log.fatal(
                 "Dropping activity filter for " + file + " as all acknowledgments were received");
 
             deletedFileFilter.remove(file);
@@ -104,10 +104,11 @@ class ResourceActivityFilter {
             remainingUsers.remove(user);
 
             if (remainingUsers.isEmpty()) {
-              log.debug(
+              log.fatal(
                   "Dropping activity filter for "
                       + entry.getKey()
-                      + " as there are no more pending acknowledgments");
+                      + " as there are no more pending acknowledgments - user left: "
+                      + user);
 
               iterator.remove();
             }
@@ -121,7 +122,7 @@ class ResourceActivityFilter {
             SPath file = iterator.next().getKey();
 
             if (file.getProject().equals(project)) {
-              log.debug(
+              log.fatal(
                   "Dropping activity filter for "
                       + file
                       + " as it is no longer part of the session");
@@ -184,13 +185,13 @@ class ResourceActivityFilter {
     remoteUsers.remove(activity.getSource());
 
     if (!remoteUsers.isEmpty()) {
-      log.debug(
-          "Adding activity filter for deleted file "
+      deletedFileFilter.put(removedFile, remoteUsers);
+
+      log.fatal(
+          "Added activity filter for deleted file "
               + removedFile
               + ", waiting for acknowledgment from user(s) "
               + remoteUsers);
-
-      deletedFileFilter.put(removedFile, remoteUsers);
     }
 
     fileDeletionHandler.accept(removedFile);
@@ -220,7 +221,7 @@ class ResourceActivityFilter {
       SPath addedFile = fileActivity.getPath();
 
       if (deletedFileFilter.containsKey(addedFile)) {
-        log.debug("Removing activity filter for re-created file " + addedFile);
+        log.fatal("Removing activity filter for re-created file " + addedFile);
 
         deletedFileFilter.remove(addedFile);
       }
@@ -270,14 +271,35 @@ class ResourceActivityFilter {
       if (activity instanceof ChecksumActivity) {
         ChecksumActivity checksumActivity = (ChecksumActivity) activity;
 
-        return checksumActivity.getHash() != ChecksumActivity.NON_EXISTING_DOC
-            && checksumActivity.getLength() != ChecksumActivity.NON_EXISTING_DOC;
+        boolean isFiltered =
+            checksumActivity.getHash() != ChecksumActivity.NON_EXISTING_DOC
+                && checksumActivity.getLength() != ChecksumActivity.NON_EXISTING_DOC;
+
+        if (isFiltered) {
+          log.fatal("Filtering checksum activity " + activity);
+        } else {
+          log.info("Not filtering checksum activity " + activity);
+        }
+
+        return isFiltered;
 
       } else if (activity instanceof EditorActivity) {
         EditorActivity editorActivity = (EditorActivity) activity;
 
-        return EditorActivity.Type.CLOSED != editorActivity.getType();
+        boolean isFiltered = EditorActivity.Type.CLOSED != editorActivity.getType();
+
+        if (isFiltered) {
+          log.fatal("Filtering editor activity " + activity);
+        } else {
+          log.info("Not filtering editor activity " + activity);
+        }
       }
+    }
+
+    if (pathIsFiltered) {
+      log.fatal("Filtering resource activity " + activity);
+    } else {
+      log.info("Not filtering resource activity " + activity);
     }
 
     return pathIsFiltered;
