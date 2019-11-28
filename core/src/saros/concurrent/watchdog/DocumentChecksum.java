@@ -1,5 +1,6 @@
 package saros.concurrent.watchdog;
 
+import org.apache.log4j.Logger;
 import saros.activities.SPath;
 
 /**
@@ -7,6 +8,8 @@ import saros.activities.SPath;
  * project-relative path, the content length and the content's string hash code.
  */
 public class DocumentChecksum {
+
+  private static final Logger log = Logger.getLogger(DocumentChecksum.class);
 
   /**
    * The return value of {@link #getLength()} and {@link #getHash()} if the checksum's associated
@@ -109,6 +112,8 @@ public class DocumentChecksum {
     }
 
     dirty = false;
+
+    log.fatal("Updated checksum " + this);
   }
 
   @Override
