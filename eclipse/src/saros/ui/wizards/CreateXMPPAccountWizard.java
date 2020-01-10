@@ -1,23 +1,14 @@
 package saros.ui.wizards;
 
-import java.lang.reflect.InvocationTargetException;
 import org.apache.log4j.Logger;
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.wizard.Wizard;
-import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smack.packet.Registration;
-import org.jivesoftware.smack.packet.XMPPError;
 import saros.SarosPluginContext;
 import saros.account.XMPPAccount;
 import saros.account.XMPPAccountStore;
 import saros.communication.connection.ConnectionHandler;
-import saros.net.util.XMPPUtils;
 import saros.repackaged.picocontainer.annotations.Inject;
 import saros.ui.ImageManager;
 import saros.ui.Messages;
-import saros.ui.util.SWTUtils;
-import saros.ui.util.XMPPConnectionSupport;
 import saros.ui.wizards.pages.CreateXMPPAccountWizardPage;
 
 /**
@@ -98,66 +89,68 @@ public class CreateXMPPAccountWizard extends Wizard {
     cachedUsername = getUsername();
     cachedPassword = getPassword();
 
-    try {
-      // fork a new thread to prevent the GUI from hanging
-      getContainer()
-          .run(
-              true,
-              false,
-              new IRunnableWithProgress() {
-                @Override
-                public void run(IProgressMonitor monitor) throws InvocationTargetException {
+    /* uncommented because create dialog is disabled and to avoid smack ref
+        try {
+          // fork a new thread to prevent the GUI from hanging
+          getContainer()
+              .run(
+                  true,
+                  false,
+                  new IRunnableWithProgress() {
+                    @Override
+                    public void run(IProgressMonitor monitor) throws InvocationTargetException {
 
-                  monitor.beginTask("Registering account...", IProgressMonitor.UNKNOWN);
+                      monitor.beginTask("Registering account...", IProgressMonitor.UNKNOWN);
 
-                  try {
-                    Registration registration =
-                        XMPPUtils.createAccount(cachedServer, cachedUsername, cachedPassword);
+                      try {
+                        Registration registration =
+                            XMPPUtils.createAccount(cachedServer, cachedUsername, cachedPassword);
 
-                    if (registration != null)
-                      createAndThrowXMPPException(registration, cachedUsername);
+                        if (registration != null)
+                          createAndThrowXMPPException(registration, cachedUsername);
 
-                    log.debug(
-                        "Account creation succeeded: username="
-                            + cachedUsername
-                            + ", server="
-                            + cachedServer);
-                  } catch (XMPPException e) {
-                    throw new InvocationTargetException(e);
-                  } finally {
-                    monitor.done();
-                  }
-                }
-              });
-    } catch (InvocationTargetException e) {
-      log.error(e.getCause().getMessage(), e.getCause());
+                        log.debug(
+                            "Account creation succeeded: username="
+                                + cachedUsername
+                                + ", server="
+                                + cachedServer);
+                      } catch (XMPPException e) {
+                        throw new InvocationTargetException(e);
+                      } finally {
+                        monitor.done();
+                      }
+                    }
+                  });
+        } catch (InvocationTargetException e) {
+          log.error(e.getCause().getMessage(), e.getCause());
 
-      String message = null;
-      Throwable t = e.getCause();
+          String message = null;
+          Throwable t = e.getCause();
 
-      if (t instanceof XMPPException) message = getErrorMessage((XMPPException) t, cachedServer);
+          if (t instanceof XMPPException) message = getErrorMessage((XMPPException) t, cachedServer);
 
-      if (message == null && t != null) message = t.getMessage();
+          if (message == null && t != null) message = t.getMessage();
 
-      createXMPPAccountPage.setErrorMessage(message);
+          createXMPPAccountPage.setErrorMessage(message);
 
-      // Leave the wizard open
-      return false;
-    } catch (InterruptedException e) {
-      log.error("uninterruptible context was interrupted", e);
-      createXMPPAccountPage.setErrorMessage(e.getMessage());
-      return false;
-    }
+          // Leave the wizard open
+          return false;
+        } catch (InterruptedException e) {
+          log.error("uninterruptible context was interrupted", e);
+          createXMPPAccountPage.setErrorMessage(e.getMessage());
+          return false;
+        }
 
-    // add account to the accountStore
-    this.createdXMPPAccount =
-        accountStore.createAccount(
-            cachedUsername, cachedPassword, cachedServer.toLowerCase(), "", 0, true, true);
+        // add account to the accountStore
+        this.createdXMPPAccount =
+            accountStore.createAccount(
+                cachedUsername, cachedPassword, cachedServer.toLowerCase(), "", 0, true, true);
 
-    if (createXMPPAccountPage.useNow())
-      SWTUtils.runSafeSWTAsync(
-          log, () -> XMPPConnectionSupport.getInstance().connect(createdXMPPAccount, true, false));
+        if (createXMPPAccountPage.useNow())
+          SWTUtils.runSafeSWTAsync(
+              log, () -> XMPPConnectionSupport.getInstance().connect(createdXMPPAccount, true, false));
 
+    */
     return true;
   }
 
@@ -213,6 +206,7 @@ public class CreateXMPPAccountWizard extends Wizard {
     return createdXMPPAccount;
   }
 
+  /* uncommented because create dialog is disabled and to avoid smack ref
   private String getErrorMessage(XMPPException e, String server) {
     String message = null;
     XMPPError error = e.getXMPPError();
@@ -257,4 +251,5 @@ public class CreateXMPPAccountWizard extends Wizard {
 
     throw new XMPPException(errorMessage);
   }
+  */
 }
